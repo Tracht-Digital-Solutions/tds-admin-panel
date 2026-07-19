@@ -1,0 +1,29 @@
+import { defineConfig } from "astro/config";
+import react from "@astrojs/react";
+import { panelHost } from "@tracht-digital-solutions/tds-panel-contract/astro";
+import { corePanelBase } from "@tracht-digital-solutions/tds-core-panel-frontend/astro";
+import { tdsViteBuild } from "@tracht-digital-solutions/tds-shared/astro";
+
+// The admin extension set — this repo's ONLY composition decision. corePanelBase
+// injects the shared base routes (dashboard/login/users/settings/wiki); panelHost
+// injects each extension's route + the widget/settings virtual modules.
+import timeTracker from "@tracht-digital-solutions/tds-ext-time-tracker";
+import supportTickets from "@tracht-digital-solutions/tds-ext-support-tickets";
+import contactTickets from "@tracht-digital-solutions/tds-ext-contact-tickets";
+import websiteCms from "@tracht-digital-solutions/tds-ext-website-cms";
+import blogCms from "@tracht-digital-solutions/tds-ext-blog-cms";
+import lexware from "@tracht-digital-solutions/tds-ext-lexware";
+
+const extensions = [timeTracker, supportTickets, contactTickets, websiteCms, blogCms, lexware];
+
+// This product builds as the ADMIN target (shell auth-hint key + brand).
+process.env.PANEL_TARGET = "admin";
+process.env.PUBLIC_PANEL_TARGET = "admin";
+
+export default defineConfig({
+  output: "static",
+  integrations: [react(), corePanelBase(), panelHost({ extensions })],
+  trailingSlash: "ignore",
+  build: { format: "directory" },
+  vite: { build: { ...tdsViteBuild } },
+});

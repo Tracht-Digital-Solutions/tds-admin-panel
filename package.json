@@ -1,0 +1,38 @@
+{
+  "name": "tds-admin-panel",
+  "version": "0.1.0",
+  "description": "Admin panel product (management.tracht-digital.de): composes the core panel host with the admin extension set. Deployed from its own dev/release branches.",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "type-check": "astro check"
+  },
+  "dependencies": {
+    "@astrojs/react": "^5.0.5",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
+    "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
+    "@fontsource/lato": "^5.2.7",
+    "@tailwindcss/postcss": "~4.2.4",
+    "@tracht-digital-solutions/tds-core-panel-frontend": "^0.10.0",
+    "@tracht-digital-solutions/tds-ext-blog-cms": "^0.1.1",
+    "@tracht-digital-solutions/tds-ext-contact-tickets": "^0.2.1",
+    "@tracht-digital-solutions/tds-ext-lexware": "^0.1.1",
+    "@tracht-digital-solutions/tds-ext-support-tickets": "^0.7.1",
+    "@tracht-digital-solutions/tds-ext-time-tracker": "^0.1.1",
+    "@tracht-digital-solutions/tds-ext-website-cms": "^0.1.1",
+    "@tracht-digital-solutions/tds-panel-contract": "^1.2.0",
+    "@tracht-digital-solutions/tds-shared": "^0.12.0",
+    "astro": "^6.4.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwindcss": "~4.2.4"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.9",
+    "typescript": "^5.6.0"
+  }
+}

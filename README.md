@@ -1,29 +1,43 @@
 # tds-admin-panel
 
-**Deploy target for the admin panel** (`management.tracht-digital.de`).
+The **admin panel** product (`management.tracht-digital.de`). A standalone Astro
+app that composes the shared **core panel host**
+(`@tracht-digital-solutions/tds-core-panel-frontend`) with the **admin extension
+set**. Deployed from this repo's own `dev` / `release` branches.
 
-The admin panel is a **build of `tds-core-panel-frontend`** with the default
-(admin) product target — the base host + the internal-tool extension set
-(time-tracker, support-tickets, website-cms, …). There is no separate app
-codebase: "two products from one core" is a build-time selection, not a fork.
+## How it works
 
-## Build
+The whole panel is assembled at build time from published packages — this repo
+owns only the composition + deploy pipeline:
+
+- `astro.config.mjs`:
+  - `corePanelBase()` (from the host package) injects the shared base routes —
+    Dashboard, Login, Nutzer, Einstellungen, API-Wiki + the shell/auth gate.
+  - `panelHost({ extensions })` (from `tds-panel-contract`) injects each
+    extension's route + the widget/settings virtual modules.
+  - `PANEL_TARGET = admin` selects the shell's auth-hint key + brand ("Panel").
+- The extension set (this repo's only real decision): time-tracker,
+  support-tickets, contact-tickets, website-cms, blog-cms, lexware, (customers).
+
+To add/remove a feature: change the `extensions` array + the matching dep, bump,
+release. To change the shell/base pages: edit the **host** package and release it,
+then repin here.
+
+## Develop
 
 ```bash
-# in tds-core-panel-frontend:
-npm install
-npm run build            # PANEL_TARGET defaults to admin
-# → dist/ deploys to management.tracht-digital.de
+npm install --no-package-lock   # host + extensions from GitHub Packages (needs NPM_TOKEN)
+npm run dev                     # astro dev
+npm run build                   # → dist/  (the deployed artifact)
 ```
 
-- Enabled extensions: `tds-core-panel-frontend/astro.config.mjs` (admin branch).
-- Auth hint key: `tds_admin_*`; brand suffix: "Panel" (`src/config/target.ts`).
-- Env: `PUBLIC_AUTH_API_URL`, `PUBLIC_API_BASE` → `api.tracht-digital.de/*`.
+## Deploy
 
-## This repo
+- **`dev` branch** — auto-built on every push to `main` (`dev.yml`); the
+  continuously-built staging artifact, not deployed.
+- **`release` branch** — the manual Actions button (`release.yml`): builds,
+  force-pushes `dist/` to `release`, and pings `DEPLOY_WEBHOOK_URL`. The
+  production host pulls `release`.
 
-Holds the admin panel's **deploy config + secrets** (this is why the repo exists
-separately from the core). The static `dist/` artifact is produced from
-`tds-core-panel-frontend`; a deploy workflow here (or a host Git pull) publishes
-it to the admin domain. The sibling `tds-customer-panel` is the same core built
-with `PANEL_TARGET=customer`.
+Secrets: `PACKAGE_TOKEN` (install from Packages + push the branch),
+`DEPLOY_WEBHOOK_URL` (optional; unset ⇒ the branch still publishes, no host ping).

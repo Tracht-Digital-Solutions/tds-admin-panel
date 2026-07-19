@@ -1,0 +1,61 @@
+name: Release → release branch (manual)
+
+# Production build, ONLY on the manual button. Builds the panel, force-publishes
+# dist/ to the orphan `release` branch (the production host pulls this), then pings
+# the deploy webhook so the host goes live. Installs host + extensions from
+# GitHub Packages (NPM_TOKEN = PACKAGE_TOKEN via the committed .npmrc).
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NPM_TOKEN: ${{ secrets.PACKAGE_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install
+        run: npm install --no-package-lock
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish dist to release
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.PACKAGE_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: release
+          force_orphan: true
+          commit_message: "release ${{ github.sha }}"
+
+      - name: Trigger deploy webhook
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_WEBHOOK_URL" ]; then
+            echo "No DEPLOY_WEBHOOK_URL secret - skipping ping (branch is published)."
+            exit 0
+          fi
+          echo "POSTing deploy webhook to $(printf '%s' "$DEPLOY_WEBHOOK_URL" | cut -d/ -f1-3) ..."
+          code=$(curl -sS -o /dev/null -w '%{http_code}' -X POST "$DEPLOY_WEBHOOK_URL" || echo 000)
+          if [ "$code" -ge 200 ] && [ "$code" -lt 300 ]; then
+            echo "Deploy webhook pinged (HTTP $code)."
+          else
+            echo "::warning title=Deploy webhook failed::Webhook returned HTTP $code. The branch is published but the host was not notified."
+          fi
