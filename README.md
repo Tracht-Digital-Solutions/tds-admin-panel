@@ -37,11 +37,11 @@ npm run build                   # → dist/  (the deployed artifact)
 
 ## Deploy
 
-- **`dev` branch** — auto-built on every push to `main` (`dev.yml`); the
-  continuously-built staging artifact, not deployed.
-- **`release` branch** — the manual Actions button (`release.yml`): builds,
-  force-pushes `dist/` to `release`, and pings `DEPLOY_WEBHOOK_URL`. The
-  production host pulls `release`.
+Continuous: **every push to `main` builds + deploys** to the orphan `release` branch
+(`release.yml`) and pings `DEPLOY_WEBHOOK_URL`; the production host pulls `release`.
+The same deploy is dispatched automatically when `tds-ext-tools` publishes a new
+`@latest` (a cross-repo `workflow_dispatch`), so an extension update rebuilds the
+panel with no manual step. The manual Actions button remains for on-demand redeploys.
 
 Secrets: `PACKAGE_TOKEN` (install from Packages + push the branch),
 `DEPLOY_WEBHOOK_URL` (optional; unset ⇒ the branch still publishes, no host ping).

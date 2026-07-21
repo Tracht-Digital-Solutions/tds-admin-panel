@@ -163,17 +163,19 @@ npm run type-check              # astro check — 0 Fehler
 npm run build                   # → dist/
 ```
 
-### 5.3 Ausrollen
+### 5.3 Ausrollen (Continuous Delivery)
 
-- **`dev`-Branch** — baut automatisch bei jedem Push auf `main` (`dev.yml`);
-  Staging-Artefakt, **nicht** deployt.
-- **`release`-Branch** — der manuelle Button: **Actions → „Release → release branch
-  (manual)" → Run workflow**. Baut, force-pusht `dist/` nach `release`, pingt
-  `DEPLOY_WEBHOOK_URL`.
+- **Jeder Push auf `main`** baut das Panel und deployt direkt auf den
+  **`release`-Branch** (`release.yml`), dann Ping an `DEPLOY_WEBHOOK_URL`.
+- Zusätzlich wird derselbe Deploy **automatisch angestoßen, wenn `tds-ext-tools`
+  (oder eine andere Panel-Extension mit Dispatch) ein neues `@latest` publisht** —
+  ein Extension-Release baut das Panel also ohne Handgriff neu.
+- Der manuelle Button (**Actions → „Deploy → release branch" → Run workflow**) bleibt
+  für einen On-Demand-Redeploy.
 - Den Prod-Host (`management.tracht-digital.de`) auf den **`release`-Branch** zeigen
   lassen (Plesk: Git-Repo → Branch `release`, Deploy-Pfad = Web-Root).
 
-Per CLI:
+Per CLI (manueller Redeploy):
 ```bash
 gh workflow run release.yml -R Tracht-Digital-Solutions/tds-admin-panel
 ```
