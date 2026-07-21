@@ -22,6 +22,9 @@ const extensions = [timeTracker, supportTickets, contactTickets, websiteCms, blo
 // This product builds as the ADMIN target (shell auth-hint key + brand).
 process.env.PANEL_TARGET = "admin";
 process.env.PUBLIC_PANEL_TARGET = "admin";
+// Login is the central site (auth.tracht-digital.de) — the host bounces there.
+// The host defaults PUBLIC_LOGIN_URL; set it in the build env to override (e.g.
+// the local tds-auth dev server).
 
 export default defineConfig({
   output: "static",
