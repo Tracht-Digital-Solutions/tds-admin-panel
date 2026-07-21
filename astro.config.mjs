@@ -28,7 +28,16 @@ process.env.PUBLIC_PANEL_TARGET = "admin";
 
 export default defineConfig({
   output: "static",
-  integrations: [react(), corePanelBase(), panelHost({ extensions })],
+  integrations: [
+    react(),
+    corePanelBase(),
+    // Pass the host shell Layout so every extension route renders inside the
+    // full panel chrome (head/CSS/nav), not as a bare unstyled fragment.
+    panelHost({
+      extensions,
+      layout: "@tracht-digital-solutions/tds-core-panel-frontend/src/layouts/Layout.astro",
+    }),
+  ],
   trailingSlash: "ignore",
   build: { format: "directory" },
   vite: { build: { ...tdsViteBuild } },
