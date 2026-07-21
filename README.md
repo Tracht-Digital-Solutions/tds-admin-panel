@@ -23,6 +23,10 @@ To add/remove a feature: change the `extensions` array + the matching dep, bump,
 release. To change the shell/base pages: edit the **host** package and release it,
 then repin here.
 
+> **Full provisioning:** `INSTALL.md` is the step-by-step runbook that stands up the
+> whole system (database → identity → panel-API → gateway → build/deploy → config →
+> tools platform → adding extensions).
+
 ## Develop
 
 ```bash
