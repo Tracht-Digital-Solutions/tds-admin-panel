@@ -1,11 +1,14 @@
-name: Release → release branch (manual)
+name: Deploy → release branch (push + manual + dispatch)
 
-# Production build, ONLY on the manual button. Builds the panel, force-publishes
-# dist/ to the orphan `release` branch (the production host pulls this), then pings
-# the deploy webhook so the host goes live. Installs host + extensions from
-# GitHub Packages (NPM_TOKEN = PACKAGE_TOKEN via the committed .npmrc).
+# Production deploy. Runs on every push to main, on the manual button, AND when an
+# extension package dispatches it (workflow_dispatch from a tds-ext-* release).
+# Builds the panel, force-publishes dist/ to the orphan `release` branch (the
+# production host pulls this), then pings the deploy webhook. Installs host +
+# extensions from GitHub Packages (NPM_TOKEN = PACKAGE_TOKEN via the committed .npmrc).
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
