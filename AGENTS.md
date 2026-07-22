@@ -1,7 +1,7 @@
 # Agent notes — tds-admin-frontend
 
-The **admin panel product** (`management.tracht-digital.de`). A standalone Astro app that
-composes the shared core panel **host** (`@tracht-digital-solutions/tds-core-panel-frontend`)
+The **admin frontend product** (`management.tracht-digital.de`). A standalone Astro app that
+composes the shared core frontend **host** (`@tracht-digital-solutions/tds-core-frontend`)
 with the **admin extension set**, at build time, into one static `dist/`. This repo owns
 only the composition + deploy pipeline — the shell, base pages, and every feature live in
 published packages.
@@ -13,11 +13,11 @@ published packages.
 
 - **Everything is assembled at build time from GitHub Packages.** There is no app source
   here beyond `astro.config.mjs` + config:
-  - `corePanelBase()` (host package `./astro`) `injectRoutes` the base pages — Dashboard,
+  - `coreFrontendBase()` (host package `./astro`) `injectRoutes` the base pages — Dashboard,
     Login, Nutzer, Einstellungen, API-Wiki — plus the shell + pre-paint auth gate.
-  - `panelHost({ extensions })` (from `tds-panel-contract-pkg`) injects each extension's route
+  - `frontendHost({ extensions })` (from `tds-frontend-contract-pkg`) injects each extension's route
     and folds its nav / widget / settings virtual modules into the composition.
-  - `PANEL_TARGET=admin` selects the auth-hint key prefix (`tds_admin_*`) + brand ("Panel").
+  - `FRONTEND_TARGET=admin` selects the auth-hint key prefix (`tds_admin_*`) + brand ("Frontend").
 - **The extension set is this repo's only real decision:** time-tracker, support-tickets,
   contact-tickets, website-cms, blog-cms, lexware, customers, billing.
   Adding/removing a feature = change the `extensions` array + its dep, bump, release.
@@ -43,7 +43,7 @@ published packages.
 ```bash
 npm install --no-package-lock   # host + extensions from GitHub Packages (needs NPM_TOKEN)
 npm run dev                     # astro dev
-npm run build                   # → dist/  (PANEL_TARGET=admin)
+npm run build                   # → dist/  (FRONTEND_TARGET=admin)
 ```
 
 - **`dev` branch** — auto-built on every push to `main` (`dev.yml`); staging artifact, not

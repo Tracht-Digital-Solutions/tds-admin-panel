@@ -1,20 +1,20 @@
-# Installation & Bereitstellung — Admin-Panel (Schritt für Schritt)
+# Installation & Bereitstellung — Admin-Frontend (Schritt für Schritt)
 
-Diese Anleitung stellt das **Admin-Panel** (`management.tracht-digital.de`) und
+Diese Anleitung stellt das **Admin-Frontend** (`management.tracht-digital.de`) und
 alles, was es dafür braucht, von Grund auf bereit — Datenbank, Identität,
-Panel-API, Gateway, der Panel-Build/Deploy, die Erstkonfiguration und optional die
+Frontend-API, Gateway, der Frontend-Build/Deploy, die Erstkonfiguration und optional die
 öffentliche Tools-Plattform.
 
-> Das Admin-Panel ist eine **statische Astro-App**, die zur Build-Zeit aus
+> Das Admin-Frontend ist eine **statische Astro-App**, die zur Build-Zeit aus
 > veröffentlichten Paketen (Host + Extensions) zusammengesetzt wird. Es hat
 > **kein eigenes Backend** — die Daten liefern `tds-auth-api` (Login/JWT) und
-> `tds-core-panel-api` (der Panel-API-Kernel mit allen Extension-Routen). Erst das
-> Zusammenspiel dieser Teile ergibt ein lauffähiges Panel.
+> `tds-core-frontend-api` (der Frontend-API-Kernel mit allen Extension-Routen). Erst das
+> Zusammenspiel dieser Teile ergibt ein lauffähiges Frontend.
 
-**Reihenfolge:** Datenbank → Identität → Panel-API → Gateway → Panel bauen/ausrollen
+**Reihenfolge:** Datenbank → Identität → Frontend-API → Gateway → Frontend bauen/ausrollen
 → konfigurieren. Backend-spezifische Details stehen jeweils im `README.md` /
 `INSTALL.md` des genannten Repos; hier steht die **Gesamt-Reihenfolge** plus die
-Panel-eigenen Schritte im Detail.
+Frontend-eigenen Schritte im Detail.
 
 ---
 
@@ -23,22 +23,22 @@ Panel-eigenen Schritte im Detail.
 | Komponente | Repo | Rolle | Läuft auf |
 |---|---|---|---|
 | Identität | `tds-auth-api` | Login, RS256-JWT-Ausgabe + JWKS, `app_user`, Mitgliedschaften | `api.tracht-digital.de/auth` |
-| Panel-API-Kernel | `tds-core-panel-api` | komponiert die Extension-Module in-process (PDO, Mailer, JWT-Verify, SettingsStore) | `api.tracht-digital.de/*` |
+| Frontend-API-Kernel | `tds-core-frontend-api` | komponiert die Extension-Module in-process (PDO, Mailer, JWT-Verify, SettingsStore) | `api.tracht-digital.de/*` |
 | API-Gateway | `tds-gateway-api` | einziger öffentlicher Eingang, routet nach Pfad-Präfix | `api.tracht-digital.de` |
-| Panel-Host | `tds-core-frontend-pkg` | Shell + Basisseiten (als npm-Paket) | (Build-Zeit) |
+| Frontend-Host | `tds-core-frontend-pkg` | Shell + Basisseiten (als npm-Paket) | (Build-Zeit) |
 | Extensions | `tds-ext-*` | Features (Tickets, CMS, Lexware, Tools …) | (Build-Zeit + Module in der API) |
-| **Admin-Panel** | **`tds-admin-frontend`** | dieses Produkt: komponiert Host + Extensions → `dist/` | `management.tracht-digital.de` |
+| **Admin-Frontend** | **`tds-admin-frontend`** | dieses Produkt: komponiert Host + Extensions → `dist/` | `management.tracht-digital.de` |
 
 ---
 
 ## 0. Voraussetzungen
 
 - **Prod-Host** (netcup/Plesk): PHP 8.3, **MySQL 8**, Apache/nginx, integrierter
-  Composer. Kein Node-Runtime auf dem Prod-Host nötig (das Panel ist statisch).
+  Composer. Kein Node-Runtime auf dem Prod-Host nötig (das Frontend ist statisch).
 - **CI/Build** läuft auf GitHub Actions (Node 22). Lokal nur nötig, wenn du
   Backends selbst testest: PHP 8.3 + Composer, Node 22.
 - **Domains/Subdomains** eingerichtet und per HTTPS erreichbar:
-  `management.tracht-digital.de` (Panel), `api.tracht-digital.de` (Gateway),
+  `management.tracht-digital.de` (Frontend), `api.tracht-digital.de` (Gateway),
   `app.tracht-digital.de` (Kundenportal, für Login/SSO).
 - **GitHub PAT (classic)** mit `read:packages`, `write:packages`,
   `delete:packages`, `repo`, `workflow`, **SSO-autorisiert** für die Org
@@ -91,9 +91,9 @@ Detaillierte Backend-Schritte: **`tds-auth-api/INSTALL.md`**.
 
 ---
 
-## 3. Panel-API-Kernel bereitstellen — `tds-core-panel-api`
+## 3. Frontend-API-Kernel bereitstellen — `tds-core-frontend-api`
 
-Das Backend, das **alle Extension-Routen** des Panels bereitstellt (Tickets, CMS,
+Das Backend, das **alle Extension-Routen** des Frontends bereitstellt (Tickets, CMS,
 Lexware, Tools …). Es komponiert die in `src/Modules.php` aktivierten Module
 in-process.
 
@@ -103,11 +103,11 @@ in-process.
    - `DB_*` — dieselbe Datenbank wie oben.
    - `AUTH_API_URL` — Basis der `tds-auth-api` (für die JWKS-Verifikation). Fehlt
      sie, ist jede Anfrage anonym (Boot funktioniert, aber niemand ist eingeloggt).
-   - `SETTINGS_ENCRYPTION_KEY` — 32-Byte-Schlüssel; verschlüsselt die im Panel
+   - `SETTINGS_ENCRYPTION_KEY` — 32-Byte-Schlüssel; verschlüsselt die im Frontend
      gespeicherten Secrets (Stripe/DeepL/…) AES-256-GCM. **Sicher aufbewahren** —
      ohne ihn sind gespeicherte Secrets nicht mehr lesbar.
    - `MAIL_DSN` — SMTP (sonst werden Mails stumm verworfen).
-   - `CORS_ALLOWED_ORIGINS` — muss die Panel-Herkünfte enthalten
+   - `CORS_ALLOWED_ORIGINS` — muss die Frontend-Herkünfte enthalten
      (`https://management.tracht-digital.de`, `https://app.tracht-digital.de`) und
      ggf. `https://tools.tracht-digital.de` (siehe Abschnitt 7).
 3. Migrationen: der Kernel migriert **in-process** beim ersten Request nach dem
@@ -115,12 +115,12 @@ in-process.
    (`app_setting`, `user_dashboard_layout`) legen sich per `CREATE TABLE IF NOT
    EXISTS` selbst an.
 
-> **Status/Blocker:** `tds-core-panel-api` hat **noch keine eigene
+> **Status/Blocker:** `tds-core-frontend-api` hat **noch keine eigene
 > Assemble-/Deploy-Pipeline** (die ist zusammen mit dem Auto-Migrator zurück-
 > gestellt). Bis sie steht, wird der Kernel manuell auf den Host gebracht (Composer
 > auf dem Plesk-Host, `main`-Branch) und über das Gateway eingebunden. Ohne
-> deploytes `core-panel-api` funktionieren die Extension-Seiten des Panels nicht
-> (nur Login/Shell). Details: **`tds-core-panel-api/README.md`**.
+> deploytes `core-frontend-api` funktionieren die Extension-Seiten des Frontends nicht
+> (nur Login/Shell). Details: **`tds-core-frontend-api/README.md`**.
 
 ---
 
@@ -128,21 +128,21 @@ in-process.
 
 `api.tracht-digital.de` ist der einzige öffentliche Eingang. Das erste Pfad-Segment
 wählt das Backend; der Rest wird weitergereicht (`/auth/…` → auth-api, der Rest →
-Panel-API-Kernel).
+Frontend-API-Kernel).
 
 - Standard `GATEWAY_MODE=inprocess` lädt die Backends **in denselben PHP-FPM-Prozess**
   (Plesk-Modell „installieren ohne SSH"). CORS bleibt bei den Upstreams — am Gateway
   **nicht** noch einmal hinzufügen.
-- Nach dem Deploy: prüfen, dass `…/auth/.well-known/jwks.json` und die Panel-Routen
+- Nach dem Deploy: prüfen, dass `…/auth/.well-known/jwks.json` und die Frontend-Routen
   (z. B. `…/admin/permissions`) erreichbar sind.
 
 Details: **`tds-gateway-api/INSTALL.md`**.
 
 ---
 
-## 5. Admin-Panel bauen & ausrollen — `tds-admin-frontend` (dieses Repo)
+## 5. Admin-Frontend bauen & ausrollen — `tds-admin-frontend` (dieses Repo)
 
-Das Panel selbst besteht nur aus `astro.config.mjs` (Komposition) + Deploy-Pipeline.
+Das Frontend selbst besteht nur aus `astro.config.mjs` (Komposition) + Deploy-Pipeline.
 Es wird aus veröffentlichten Paketen gebaut.
 
 ### 5.1 Secrets setzen (GitHub → Repo Settings → Secrets)
@@ -165,11 +165,11 @@ npm run build                   # → dist/
 
 ### 5.3 Ausrollen (Continuous Delivery)
 
-- **Jeder Push auf `main`** baut das Panel und deployt direkt auf den
+- **Jeder Push auf `main`** baut das Frontend und deployt direkt auf den
   **`release`-Branch** (`release.yml`), dann Ping an `DEPLOY_WEBHOOK_URL`.
 - Zusätzlich wird derselbe Deploy **automatisch angestoßen, wenn `tds-ext-tools-pkg`
-  (oder eine andere Panel-Extension mit Dispatch) ein neues `@latest` publisht** —
-  ein Extension-Release baut das Panel also ohne Handgriff neu.
+  (oder eine andere Frontend-Extension mit Dispatch) ein neues `@latest` publisht** —
+  ein Extension-Release baut das Frontend also ohne Handgriff neu.
 - Der manuelle Button (**Actions → „Deploy → release branch" → Run workflow**) bleibt
   für einen On-Demand-Redeploy.
 - Den Prod-Host (`management.tracht-digital.de`) auf den **`release`-Branch** zeigen
@@ -180,7 +180,7 @@ Per CLI (manueller Redeploy):
 gh workflow run release.yml -R Tracht-Digital-Solutions/tds-admin-frontend
 ```
 
-Das Panel ist `noindex` + robots-disallowed — das ist **so gewollt** (internes Panel).
+Das Frontend ist `noindex` + robots-disallowed — das ist **so gewollt** (internes Frontend).
 
 ---
 
@@ -200,9 +200,9 @@ Das Panel ist `noindex` + robots-disallowed — das ist **so gewollt** (internes
 ## 7. Öffentliche Tools-Plattform anbinden (optional)
 
 Die öffentliche Tools-Seite `tools.tracht-digital.de` wird über die Extension
-**`tds-ext-tools-pkg`** (bereits im Panel enthalten) gesteuert.
+**`tds-ext-tools-pkg`** (bereits im Frontend enthalten) gesteuert.
 
-1. Sicherstellen, dass `tds-ext-tools-pkg` released + das Panel damit gebaut ist (ist es).
+1. Sicherstellen, dass `tds-ext-tools-pkg` released + das Frontend damit gebaut ist (ist es).
 2. In **Einstellungen → Tools / AdSense** setzen: AdSense-Publisher-ID + Slots,
    Registry-Sync-Token (identisch als `TOOLS_REGISTRY_TOKEN` in `tds-tools-frontend`),
    Rebuild-Repo/-Token, Stripe (für Premium-Tools).
@@ -211,8 +211,8 @@ Die öffentliche Tools-Seite `tools.tracht-digital.de` wird über die Extension
 4. Die Website selbst bereitstellen: **`tds-tools-frontend`** (eigenes Repo) — `DEPLOY_WEBHOOK_URL`
    setzen, **Release** drücken, Domain auf dessen `release`-Branch zeigen.
 
-Die **freien Tools + AdSense laufen unabhängig** vom Panel-Backend; der dynamische
-Katalog + Premium brauchen ein deploytes `tds-core-panel-api` (Schritt 3).
+Die **freien Tools + AdSense laufen unabhängig** vom Frontend-Backend; der dynamische
+Katalog + Premium brauchen ein deploytes `tds-core-frontend-api` (Schritt 3).
 Vollständige Anleitung: **`tds-tools-frontend/README.md`** + **`tds-ext-tools-pkg/README.md`**.
 
 ---
@@ -228,13 +228,13 @@ PHP-`Module`. Ein-/Ausbauen betrifft **zwei** Stellen (Frontend + Backend):
    import feature from "@tracht-digital-solutions/tds-ext-feature";
    const extensions = [ …, feature ];
    ```
-2. **Backend** (`tds-core-panel-api`): `new FeatureModule()` in `src/Modules.php`
+2. **Backend** (`tds-core-frontend-api`): `new FeatureModule()` in `src/Modules.php`
    `enabled()` ergänzen + ein Composer-Eintrag/`path`-Repo (dev) bzw. VCS-Require.
 3. **Version bumpen** (dieses Repo `package.json`) und **Release** drücken. Nach dem
-   Deploy des Panels **und** des Kernels ist die Funktion live.
+   Deploy des Frontends **und** des Kernels ist die Funktion live.
 
 Eine **neue** Extension entsteht aus `tds-ext-template-pkg` (Klonen + Umbenennen);
-Details in `tds-ext-template/README.md` und `tds-panel-contract/AGENTS.md`. Regeln:
+Details in `tds-ext-template/README.md` und `tds-frontend-contract/AGENTS.md`. Regeln:
 IDs (Extension/Permission/Nav/Widget/Settings/Route) sind **global eindeutig** (die
 Komposition bricht sonst hart ab); Extensions bleiben in der `0.1.x`-Linie.
 
@@ -254,11 +254,11 @@ Komposition bricht sonst hart ab); Extensions bleiben in der `0.1.x`-Linie.
 (Gateway `/wiki`). Cookie-Domain `.tracht-digital.de`.
 
 ### Domains
-`management.` (Panel · `release`-Branch), `app.` (Kundenportal), `api.` (Gateway →
-auth + core-panel-api), `tools.` (Tools-Seite · optional).
+`management.` (Frontend · `release`-Branch), `app.` (Kundenportal), `api.` (Gateway →
+auth + core-frontend-api), `tools.` (Tools-Seite · optional).
 
 ### Troubleshooting
-- **Login klappt, aber Extension-Seiten leer/Fehler** → `tds-core-panel-api` nicht
+- **Login klappt, aber Extension-Seiten leer/Fehler** → `tds-core-frontend-api` nicht
   (richtig) deployt oder `AUTH_API_URL`/`CORS_ALLOWED_ORIGINS` falsch.
 - **`npm install` 401/403 in CI** → `PACKAGE_TOKEN` fehlt/abgelaufen (401) bzw.
   nicht SSO-autorisiert (403).
@@ -268,8 +268,8 @@ auth + core-panel-api), `tools.` (Tools-Seite · optional).
   im Plesk manuell „Pull".
 
 ### Offene Blocker (Stand: Plattform gebaut, Cutover ausstehend)
-- `tds-core-panel-api` hat noch **keine Assemble-/Deploy-Pipeline** → manueller
-  Deploy nötig; bis dahin sind die dynamischen Panel-Funktionen nicht produktiv.
+- `tds-core-frontend-api` hat noch **keine Assemble-/Deploy-Pipeline** → manueller
+  Deploy nötig; bis dahin sind die dynamischen Frontend-Funktionen nicht produktiv.
 - `DEPLOY_WEBHOOK_URL` auf den Produkten setzen + Domains auf die `release`-Branches
   zeigen.
 
